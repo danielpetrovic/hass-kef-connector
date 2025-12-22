@@ -1,7 +1,11 @@
 """Sensor platform for KEF Connector integration."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -77,6 +81,7 @@ async def async_setup_entry(
             KefRawCodecSensor(coordinator, entry, name, device_info),
             KefStreamChannelsSensor(coordinator, entry, name, device_info),
             KefAudioChannelsSensor(coordinator, entry, name, device_info),
+            KefCalibrationSensor(coordinator, entry, name, device_info),
         ])
 
     # WiFi sensors - all models
@@ -322,6 +327,7 @@ class KefWiFiSignalSensor(CoordinatorEntity, SensorEntity):
     """Sensor for KEF WiFi signal strength (disabled by default)."""
 
     _attr_entity_registry_enabled_default = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self, coordinator: KefCoordinator, entry: ConfigEntry, name: str, device_info: dict
@@ -351,9 +357,22 @@ class KefWiFiSignalSensor(CoordinatorEntity, SensorEntity):
 
 
 class KefWiFiFrequencySensor(CoordinatorEntity, SensorEntity):
-    """Sensor for KEF WiFi frequency band (disabled by default)."""
+    """Sensor for KEF WiFi frequency in MHz (disabled by default).
+
+    Reports the exact WiFi frequency in MHz (e.g., 2437, 5180, 6215).
+    This allows tracking channel/AP switches over time when graphed.
+
+    Common frequency ranges:
+    - 2.4 GHz band: 2412-2484 MHz (channels 1-14)
+    - 5 GHz band: 5170-5825 MHz
+    - 6 GHz band: 5935-7125 MHz (WiFi 6E)
+    """
 
     _attr_entity_registry_enabled_default = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_native_unit_of_measurement = "MHz"
+    _attr_device_class = SensorDeviceClass.FREQUENCY
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
         self, coordinator: KefCoordinator, entry: ConfigEntry, name: str, device_info: dict
@@ -366,20 +385,28 @@ class KefWiFiFrequencySensor(CoordinatorEntity, SensorEntity):
         self._attr_device_info = device_info
 
     @property
-    def native_value(self) -> str | None:
-        """Return the WiFi frequency band (2.4 GHz or 5 GHz)."""
+    def native_value(self) -> int | None:
+        """Return the WiFi frequency in MHz."""
         if not self.coordinator.last_update_success:
             return None
+        return self.coordinator.data.get("wifi_frequency")
 
+    @property
+    def extra_state_attributes(self) -> dict[str, str] | None:
+        """Return additional state attributes."""
         freq = self.coordinator.data.get("wifi_frequency")
         if freq is None:
             return None
 
-        # Convert frequency to band display
+        # Determine the band for display
         if freq < 3000:
-            return "2.4 GHz"
+            band = "2.4 GHz"
+        elif freq < 5900:
+            band = "5 GHz"
         else:
-            return f"{freq / 1000:.1f} GHz"
+            band = "6 GHz"
+
+        return {"band": band}
 
     @property
     def available(self) -> bool:
@@ -387,4 +414,62 @@ class KefWiFiFrequencySensor(CoordinatorEntity, SensorEntity):
         return (
             self.coordinator.last_update_success
             and self.coordinator.data.get("wifi_frequency") is not None
+        )
+
+
+class KefCalibrationSensor(CoordinatorEntity, SensorEntity):
+    """Sensor for KEF XIO room calibration status."""
+
+    def __init__(
+        self, coordinator: KefCoordinator, entry: ConfigEntry, name: str, device_info: dict
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_name = f"{name} Room Calibration"
+        self._attr_unique_id = f"{entry.entry_id}_calibration"
+        self._attr_icon = "mdi:tune"
+        self._attr_device_info = device_info
+        self._attr_translation_key = "room_calibration"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the calibration status."""
+        if not self.coordinator.last_update_success:
+            return None
+
+        status = self.coordinator.data.get("calibration_status")
+        if status is None:
+            return None
+
+        is_calibrated = status.get("isCalibrated", False)
+        return "Calibrated" if is_calibrated else "Not calibrated"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, any] | None:
+        """Return additional calibration attributes."""
+        if not self.coordinator.last_update_success:
+            return None
+
+        status = self.coordinator.data.get("calibration_status")
+        result = self.coordinator.data.get("calibration_result")
+
+        if status is None:
+            return None
+
+        attrs = {
+            "is_calibrated": status.get("isCalibrated", False),
+            "stability": status.get("stability"),
+        }
+
+        if result is not None:
+            attrs["adjustment_db"] = result
+
+        return attrs
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return (
+            self.coordinator.last_update_success
+            and self.coordinator.data.get("calibration_status") is not None
         )

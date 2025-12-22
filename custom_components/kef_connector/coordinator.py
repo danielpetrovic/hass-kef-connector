@@ -5,7 +5,7 @@ from datetime import timedelta
 import logging
 from typing import Any
 
-from pykefcontrol.kef_connector import KefAsyncConnector
+from .pykefcontrol.kef_connector import KefAsyncConnector
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -25,10 +25,12 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         name: str,
         scan_interval: int,
         offline_retry_interval: int,
+        speaker_model: str = "LSX2",
     ) -> None:
         """Initialize the coordinator."""
         self.speaker = speaker
         self.name = name
+        self.speaker_model = speaker_model.upper()
         self.normal_interval = timedelta(seconds=scan_interval)
         self.offline_interval = timedelta(seconds=offline_retry_interval)
         self._is_offline = False
@@ -77,6 +79,46 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Get WiFi signal strength
             wifi_info = await self.speaker.get_wifi_information()
 
+            # Get EQ profile (contains all DSP settings)
+            eq_profile = await self.speaker.get_eq_profile()
+            eq_data = eq_profile.get("kefEqProfileV2", {}) if eq_profile else {}
+
+            # Get hardware settings
+            front_led = await self.speaker.get_front_led()
+            standby_led = await self.speaker.get_standby_led()
+            standby_mode = await self.speaker.get_standby_mode()
+            top_panel_enabled = await self.speaker.get_top_panel_enabled()
+            top_panel_led = await self.speaker.get_top_panel_led()
+            startup_tone = await self.speaker.get_startup_tone()
+            cable_mode = await self.speaker.get_cable_mode()
+            master_channel = await self.speaker.get_master_channel()
+
+            # Get subwoofer wake on startup settings
+            subwoofer_wake_on_startup = await self.speaker.get_subwoofer_wake_on_startup()
+            kw1_wake_on_startup = await self.speaker.get_kw1_wake_on_startup()
+
+            # Get firmware version
+            firmware_version = await self.speaker.get_firmware_version()
+
+            # Get speaker volume settings (max volume, step)
+            try:
+                volume_settings = await self.speaker.get_volume_settings()
+            except Exception:
+                volume_settings = {}
+
+            # Get calibration status (XIO only)
+            calibration_status = None
+            calibration_result = None
+            if self.speaker_model == "XIO":
+                try:
+                    calibration_status = await self.speaker.get_calibration_status()
+                    calibration_result = await self.speaker.get_calibration_result()
+                except Exception:
+                    pass
+
+            # Get MAC address for device registry
+            mac_address = await self.speaker.mac_address
+
             # Speaker is online - reset offline state
             if self._is_offline:
                 _LOGGER.info(
@@ -116,6 +158,58 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "wifi_ssid": wifi_info.get("ssid"),
                 "wifi_frequency": wifi_info.get("frequency"),
                 "wifi_bssid": wifi_info.get("bssid"),
+                # EQ profile data (DSP settings)
+                "eq_profile": eq_profile,
+                "eq_data": eq_data,
+                "eq_profile_name": eq_data.get("profileName"),
+                "eq_profile_id": eq_data.get("profileId"),
+                # Individual DSP settings from EQ profile
+                "treble": eq_data.get("trebleAmount"),
+                "balance": eq_data.get("balance"),
+                "desk_mode_enabled": eq_data.get("deskMode"),
+                "desk_mode_db": eq_data.get("deskModeSetting"),
+                "wall_mode_enabled": eq_data.get("wallMode"),
+                "wall_mode_db": eq_data.get("wallModeSetting"),
+                "phase_correction": eq_data.get("phaseCorrection"),
+                "bass_extension": eq_data.get("bassExtension"),
+                "high_pass_enabled": eq_data.get("highPassMode"),
+                "high_pass_freq": eq_data.get("highPassModeFreq"),
+                "audio_polarity": eq_data.get("audioPolarity"),
+                # Subwoofer settings from EQ profile
+                "subwoofer_enabled": eq_data.get("subwooferCount", 0) > 0 or eq_data.get("subwooferOut", False),
+                "subwoofer_gain": eq_data.get("subwooferGain"),
+                "subwoofer_polarity": eq_data.get("subwooferPolarity"),
+                "subwoofer_preset": eq_data.get("subwooferPreset"),
+                "subwoofer_lowpass": eq_data.get("subOutLPFreq"),
+                "subwoofer_stereo": eq_data.get("subwooferStereo"),
+                # Wireless subwoofer adapter settings
+                "kw1_enabled": eq_data.get("isKW1", False),
+                "subwoofer_count": eq_data.get("subwooferCount", 1),
+                # XIO-specific from EQ profile
+                "sound_profile": eq_data.get("soundProfile"),
+                "dialogue_mode": eq_data.get("dialogueMode", False),
+                "wall_mounted": eq_data.get("wallMounted"),
+                # Hardware settings
+                "front_led": front_led,
+                "standby_led": standby_led,
+                "standby_mode": standby_mode,
+                "top_panel_enabled": top_panel_enabled,
+                "top_panel_led": top_panel_led,
+                "startup_tone": startup_tone,
+                "cable_mode": cable_mode,
+                "master_channel": master_channel,
+                # Subwoofer wake on startup settings
+                "subwoofer_wake_on_startup": subwoofer_wake_on_startup,
+                "kw1_wake_on_startup": kw1_wake_on_startup,
+                # Device info
+                "firmware_version": firmware_version,
+                "mac_address": mac_address,
+                # Speaker volume settings
+                "speaker_max_volume": volume_settings.get("max_volume", 100),
+                "speaker_volume_step": volume_settings.get("step", 1),
+                # Calibration data (XIO only)
+                "calibration_status": calibration_status,
+                "calibration_result": calibration_result,
             }
             self._last_successful_data = data
             return data
@@ -173,3 +267,21 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.update_interval = self.offline_interval
         else:
             self.update_interval = self.normal_interval
+
+    def async_set_updated_data_optimistic(self, key: str, value: Any) -> None:
+        """Optimistically update a single data key and notify listeners.
+
+        Use this after successfully sending a command to the speaker to
+        immediately update the UI without waiting for the next poll cycle.
+
+        Args:
+            key: The data key to update (e.g., "treble", "balance", "front_led")
+            value: The new value
+        """
+        if self.data is not None:
+            self.data[key] = value
+            # Also update cached data
+            if self._last_successful_data is not None:
+                self._last_successful_data[key] = value
+            # Notify all listeners (entities) that data has changed
+            self.async_set_updated_data(self.data)

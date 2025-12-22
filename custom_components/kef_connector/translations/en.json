@@ -1,4 +1,219 @@
 {
+  "entity": {
+    "number": {
+      "treble": {
+        "name": "DSP: Treble Trim"
+      },
+      "balance": {
+        "name": "DSP: Balance"
+      },
+      "desk_mode_db": {
+        "name": "DSP: Desk Mode Level"
+      },
+      "wall_mode_db": {
+        "name": "DSP: Wall Mode Level"
+      },
+      "high_pass_freq": {
+        "name": "SW: High-Pass Frequency"
+      },
+      "subwoofer_gain": {
+        "name": "SW: Gain"
+      },
+      "subwoofer_crossover": {
+        "name": "SW: Low-Pass Frequency"
+      }
+    },
+    "select": {
+      "bass_extension": {
+        "name": "DSP: Bass Extension",
+        "state": {
+          "standard": "Standard",
+          "less": "Less",
+          "extra": "Extra"
+        }
+      },
+      "audio_polarity": {
+        "name": "DSP: Audio Polarity",
+        "state": {
+          "normal": "Normal",
+          "inverted": "Inverted"
+        }
+      },
+      "subwoofer_preset": {
+        "name": "SW: Preset",
+        "state": {
+          "custom": "Custom",
+          "kc62": "KC62",
+          "kf92": "KF92",
+          "kube8b": "KUBE 8b",
+          "kube10b": "KUBE 10b",
+          "kube12b": "KUBE 12b",
+          "kube15": "KUBE 15",
+          "t2": "T2"
+        }
+      },
+      "subwoofer_polarity": {
+        "name": "SW: Polarity",
+        "state": {
+          "normal": "Normal",
+          "inverted": "Inverted"
+        }
+      },
+      "standby_mode": {
+        "name": "HW: Standby Mode",
+        "state": {
+          "standby_20mins": "20 minutes",
+          "standby_30mins": "30 minutes",
+          "standby_60mins": "60 minutes",
+          "standby_none": "Never"
+        }
+      },
+      "cable_mode": {
+        "name": "HW: Interspeaker Link",
+        "state": {
+          "wired": "Wired",
+          "wireless": "Wireless"
+        }
+      },
+      "master_channel": {
+        "name": "HW: Primary Speaker",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
+      },
+      "sound_profile": {
+        "name": "DSP: Sound Profile",
+        "state": {
+          "default": "Default",
+          "music": "Music",
+          "movie": "Movie",
+          "night": "Night",
+          "dialogue": "Dialogue",
+          "direct": "Direct"
+        }
+      },
+      "eq_profile": {
+        "name": "EQ Profile"
+      }
+    },
+    "switch": {
+      "desk_mode": {
+        "name": "DSP: Desk Mode"
+      },
+      "wall_mode": {
+        "name": "DSP: Wall Mode"
+      },
+      "phase_correction": {
+        "name": "DSP: Phase Correction"
+      },
+      "high_pass_mode": {
+        "name": "SW: High-Pass"
+      },
+      "subwoofer": {
+        "name": "SW: Enabled"
+      },
+      "kw1_adapter": {
+        "name": "SW: KW1 Adapter"
+      },
+      "subwoofer_wake_on_startup": {
+        "name": "SW: Wake on Startup"
+      },
+      "kw1_wake_on_startup": {
+        "name": "SW: KW1 Wake on Startup"
+      },
+      "wall_mounted": {
+        "name": "HW: Wall Mounted"
+      },
+      "front_led": {
+        "name": "Front LED"
+      },
+      "standby_led": {
+        "name": "DND: Control Panel in Standby"
+      },
+      "control_panel_lock": {
+        "name": "DND: Control Panel Lock"
+      },
+      "control_panel_led": {
+        "name": "DND: Control Panel LED"
+      },
+      "startup_tone": {
+        "name": "DND: Startup Tone"
+      }
+    },
+    "button": {
+      "check_firmware_update": {
+        "name": "Check Firmware Update"
+      }
+    },
+    "sensor": {
+      "room_calibration": {
+        "name": "Room Calibration",
+        "state": {
+          "calibrated": "Calibrated",
+          "not_calibrated": "Not calibrated"
+        }
+      }
+    }
+  },
+  "services": {
+    "save_eq_profile": {
+      "name": "Save EQ Profile",
+      "description": "Save current speaker EQ settings to a named profile",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The KEF speaker device"
+        },
+        "name": {
+          "name": "Profile Name",
+          "description": "Name for the EQ profile"
+        },
+        "description": {
+          "name": "Description",
+          "description": "Optional description for the profile"
+        }
+      }
+    },
+    "load_eq_profile": {
+      "name": "Load EQ Profile",
+      "description": "Load and apply a saved EQ profile to the speaker",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The KEF speaker device"
+        },
+        "name": {
+          "name": "Profile Name",
+          "description": "Name of the EQ profile to load"
+        }
+      }
+    },
+    "delete_eq_profile": {
+      "name": "Delete EQ Profile",
+      "description": "Delete a saved EQ profile",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The KEF speaker device"
+        },
+        "name": {
+          "name": "Profile Name",
+          "description": "Name of the EQ profile to delete"
+        }
+      }
+    },
+    "list_eq_profiles": {
+      "name": "List EQ Profiles",
+      "description": "List all saved EQ profiles for a speaker",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The KEF speaker device"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
@@ -8,17 +223,13 @@
           "host": "IP Address",
           "speaker_model": "Speaker Model",
           "scan_interval": "Scan Interval (seconds)",
-          "offline_retry_interval": "Offline Retry Interval (seconds)",
-          "volume_step": "Volume Step",
-          "maximum_volume": "Maximum Volume"
+          "offline_retry_interval": "Offline Retry Interval (seconds)"
         },
         "data_description": {
           "host": "The IP address of your KEF speaker",
           "speaker_model": "Determines available input sources. Auto-detected from Google Cast name.",
           "scan_interval": "How often to update speaker status when online. Lower = more responsive, higher = less network traffic. (5-300 seconds)",
-          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)",
-          "volume_step": "Volume change per up/down command. 0.05 = 5% per step. (0.01-0.10)",
-          "maximum_volume": "Safety limit to prevent accidental loud volume. 1.0 = 100% maximum. (0.1-1.0)"
+          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)"
         }
       },
       "zeroconf_confirm": {
@@ -27,16 +238,12 @@
         "data": {
           "speaker_model": "Speaker Model",
           "scan_interval": "Scan Interval (seconds)",
-          "offline_retry_interval": "Offline Retry Interval (seconds)",
-          "volume_step": "Volume Step",
-          "maximum_volume": "Maximum Volume"
+          "offline_retry_interval": "Offline Retry Interval (seconds)"
         },
         "data_description": {
           "speaker_model": "Determines available input sources. Auto-detected from Google Cast name.",
           "scan_interval": "How often to update speaker status when online. Lower = more responsive, higher = less network traffic. (5-300 seconds)",
-          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)",
-          "volume_step": "Volume change per up/down command. 0.05 = 5% per step. (0.01-0.10)",
-          "maximum_volume": "Safety limit to prevent accidental loud volume. 1.0 = 100% maximum. (0.1-1.0)"
+          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)"
         }
       }
     },
@@ -53,20 +260,123 @@
     "step": {
       "init": {
         "title": "KEF Speaker Options",
-        "description": "Configure advanced settings for your KEF speaker",
+        "description": "Choose what to configure",
+        "menu_options": {
+          "settings": "Integration Settings",
+          "volume_settings": "Speaker Volume Settings",
+          "eq_profiles": "EQ Profiles"
+        }
+      },
+      "settings": {
+        "title": "Integration Settings",
+        "description": "Configure Home Assistant integration behavior",
         "data": {
           "scan_interval": "Scan Interval (seconds)",
-          "offline_retry_interval": "Offline Retry Interval (seconds)",
-          "volume_step": "Volume Step",
-          "maximum_volume": "Maximum Volume"
+          "offline_retry_interval": "Offline Retry Interval (seconds)"
         },
         "data_description": {
           "scan_interval": "How often to update speaker status when online. Lower = more responsive, higher = less network traffic. (5-300 seconds)",
-          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)",
-          "volume_step": "Volume change per up/down command. 0.05 = 5% per step. (0.01-0.10)",
-          "maximum_volume": "Safety limit to prevent accidental loud volume. 1.0 = 100% maximum. (0.1-1.0)"
+          "offline_retry_interval": "How often to check if an offline speaker is back online. Higher values reduce log spam. (30-600 seconds)"
+        }
+      },
+      "volume_settings": {
+        "title": "Speaker Volume Settings",
+        "description": "Configure volume behavior stored on the speaker. Current reset volume mode: {current_mode}\n\nClick X to exit without making changes.",
+        "menu_options": {
+          "volume_limits": "Volume Limits & Step",
+          "startup_volume_global": "Reset Volume: All Sources",
+          "startup_volume_per_input": "Reset Volume: Individual Sources",
+          "startup_volume_disable": "Disable Reset Volume"
+        }
+      },
+      "volume_limits": {
+        "title": "Volume Limits & Step",
+        "description": "Configure maximum volume and step size. These settings sync with the KEF Connect app.",
+        "data": {
+          "volume_limit_enabled": "Enforce Maximum Volume",
+          "maximum_volume": "Maximum Volume (0-100)",
+          "volume_step": "Volume Step (1-10)"
+        },
+        "data_description": {
+          "volume_limit_enabled": "When enabled, volume cannot exceed the maximum. Disable to allow full volume range.",
+          "maximum_volume": "Speaker maximum volume limit. Only applies when enforcement is enabled.",
+          "volume_step": "Volume change per button press on speaker or remote."
+        }
+      },
+      "startup_volume_global": {
+        "title": "Reset Volume: All Sources",
+        "description": "Use the same reset volume for all input sources.",
+        "data": {
+          "startup_volume_global": "Reset Volume (0-100)"
+        },
+        "data_description": {
+          "startup_volume_global": "Volume level when speaker wakes from standby (applies to all inputs)."
+        }
+      },
+      "startup_volume_per_input": {
+        "title": "Reset Volume: Individual Sources",
+        "description": "Set a different reset volume for each input source.",
+        "data": {
+          "startup_volume_wifi": "WiFi",
+          "startup_volume_bluetooth": "Bluetooth",
+          "startup_volume_tv": "TV/HDMI",
+          "startup_volume_optical": "Optical",
+          "startup_volume_analog": "Analog",
+          "startup_volume_usb": "USB",
+          "startup_volume_coaxial": "Coaxial"
+        },
+        "data_description": {
+          "startup_volume_wifi": "Reset volume for WiFi/streaming input.",
+          "startup_volume_bluetooth": "Reset volume for Bluetooth input.",
+          "startup_volume_tv": "Reset volume for TV/HDMI input.",
+          "startup_volume_optical": "Reset volume for Optical input.",
+          "startup_volume_analog": "Reset volume for Analog input.",
+          "startup_volume_usb": "Reset volume for USB input.",
+          "startup_volume_coaxial": "Reset volume for Coaxial input."
+        }
+      },
+      "eq_profiles": {
+        "title": "EQ Profiles",
+        "description": "Manage saved EQ profiles. Saved profiles: {profile_count} ({profile_names})\n\nNote: EQ profiles in the KEF Connect app are stored on your phone, not the speaker. Only the active profile is stored on the speaker. This integration saves profiles locally in Home Assistant.",
+        "menu_options": {
+          "save_profile": "Save Current EQ as Profile",
+          "load_profile": "Load Saved Profile",
+          "delete_profile": "Delete Saved Profile"
+        }
+      },
+      "save_profile": {
+        "title": "Save EQ Profile",
+        "description": "Save the current speaker EQ settings as a named profile",
+        "data": {
+          "profile_name": "Profile Name",
+          "description": "Description (optional)"
+        }
+      },
+      "load_profile": {
+        "title": "Load EQ Profile",
+        "description": "Select a saved profile to apply to the speaker",
+        "data": {
+          "profile_name": "Profile"
+        }
+      },
+      "delete_profile": {
+        "title": "Delete EQ Profile",
+        "description": "Select a saved profile to delete",
+        "data": {
+          "profile_name": "Profile"
         }
       }
+    },
+    "error": {
+      "name_required": "Profile name is required"
+    },
+    "abort": {
+      "profile_saved": "EQ profile saved successfully",
+      "profile_loaded": "EQ profile loaded successfully",
+      "profile_deleted": "EQ profile deleted successfully",
+      "no_profiles": "No saved profiles found",
+      "volume_settings_saved": "Speaker volume settings saved successfully",
+      "startup_volume_disabled": "Reset volume disabled. Speaker will resume at last volume level."
     }
   },
   "selector": {

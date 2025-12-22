@@ -1,0 +1,75 @@
+save_eq_profile:
+  name: Save EQ Profile
+  description: Save current speaker EQ settings to a named profile
+  fields:
+    device_id:
+      name: Device
+      description: The KEF speaker device
+      required: true
+      selector:
+        device:
+          integration: kef_connector
+    name:
+      name: Profile Name
+      description: Name for the EQ profile
+      required: true
+      example: "Living Room Evening"
+      selector:
+        text:
+    description:
+      name: Description
+      description: Optional description for the profile
+      required: false
+      example: "Warm sound for evening listening"
+      selector:
+        text:
+
+load_eq_profile:
+  name: Load EQ Profile
+  description: Load and apply a saved EQ profile to the speaker
+  fields:
+    device_id:
+      name: Device
+      description: The KEF speaker device
+      required: true
+      selector:
+        device:
+          integration: kef_connector
+    name:
+      name: Profile Name
+      description: Name of the EQ profile to load
+      required: true
+      example: "Living Room Evening"
+      selector:
+        text:
+
+delete_eq_profile:
+  name: Delete EQ Profile
+  description: Delete a saved EQ profile
+  fields:
+    device_id:
+      name: Device
+      description: The KEF speaker device
+      required: true
+      selector:
+        device:
+          integration: kef_connector
+    name:
+      name: Profile Name
+      description: Name of the EQ profile to delete
+      required: true
+      example: "Living Room Evening"
+      selector:
+        text:
+
+list_eq_profiles:
+  name: List EQ Profiles
+  description: List all saved EQ profiles for a speaker (returns response data)
+  fields:
+    device_id:
+      name: Device
+      description: The KEF speaker device
+      required: true
+      selector:
+        device:
+          integration: kef_connector

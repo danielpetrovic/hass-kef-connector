@@ -26,11 +26,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import homeassistant.util.dt as dt_util
 
 from .const import (
-    CONF_MAX_VOLUME,
     CONF_SPEAKER_MODEL,
-    CONF_VOLUME_STEP,
-    DEFAULT_MAX_VOLUME,
-    DEFAULT_VOLUME_STEP,
     DOMAIN,
     MANUFACTURER,
     MODEL_NAMES,
@@ -76,10 +72,6 @@ async def async_setup_entry(
     host = entry.data[CONF_HOST]
     speaker_model = entry.data.get(CONF_SPEAKER_MODEL, "LSX2").upper()
 
-    # Get options with defaults
-    max_volume = entry.options.get(CONF_MAX_VOLUME, DEFAULT_MAX_VOLUME)
-    volume_step = entry.options.get(CONF_VOLUME_STEP, DEFAULT_VOLUME_STEP)
-
     # Get sources for this model
     sources = SOURCES.get(speaker_model, SOURCES["LSX2"])
 
@@ -94,8 +86,6 @@ async def async_setup_entry(
         unique_id=unique_id,
         speaker_model=speaker_model,
         sources=sources,
-        max_volume=max_volume,
-        volume_step=volume_step,
         host=host,
     )
 
@@ -112,8 +102,6 @@ class KefSpeaker(CoordinatorEntity, MediaPlayerEntity):
         unique_id: str,
         speaker_model: str,
         sources: list[str],
-        max_volume: float,
-        volume_step: float,
         host: str,
     ) -> None:
         """Initialize the media player."""
@@ -124,8 +112,6 @@ class KefSpeaker(CoordinatorEntity, MediaPlayerEntity):
         self._attr_unique_id = unique_id
         self._speaker_model = speaker_model
         self._sources = sources
-        self._max_volume = max_volume
-        self._volume_step = volume_step * 100  # Convert to 0-100 range
 
         # State tracking
         self._previous_source = "wifi"
@@ -410,20 +396,25 @@ class KefSpeaker(CoordinatorEntity, MediaPlayerEntity):
     async def async_volume_up(self):
         """Volume up the media player."""
         current_volume = await self.coordinator.speaker.volume
-        await self.coordinator.speaker.set_volume(current_volume + self._volume_step)
+        # Use speaker's volume step setting (1-10)
+        volume_step = self.coordinator.data.get("speaker_volume_step", 1)
+        await self.coordinator.speaker.set_volume(current_volume + volume_step)
         await self.coordinator.async_request_refresh()
 
     async def async_volume_down(self):
         """Volume down the media player."""
         current_volume = await self.coordinator.speaker.volume
-        await self.coordinator.speaker.set_volume(current_volume - self._volume_step)
+        # Use speaker's volume step setting (1-10)
+        volume_step = self.coordinator.data.get("speaker_volume_step", 1)
+        await self.coordinator.speaker.set_volume(current_volume - volume_step)
         await self.coordinator.async_request_refresh()
 
     async def async_set_volume_level(self, volume):
         """Set volume level, range 0..1."""
-        # make sure volume is not louder than max_volume
-        # multiply by 100 to be in range of what KefAsyncConnector expects
-        volume = int(min(volume, self._max_volume) * 100)
+        # Use speaker's max volume setting (0-100)
+        max_volume = self.coordinator.data.get("speaker_max_volume", 100)
+        # Convert from 0..1 to 0..100 and cap at speaker's max volume
+        volume = int(min(volume * 100, max_volume))
         await self.coordinator.speaker.set_volume(volume)
         await self.coordinator.async_request_refresh()
 
