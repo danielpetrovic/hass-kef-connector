@@ -1,11 +1,12 @@
 # 🏠🔉 KEF Connector
-A Home Assistant integration for KEF speakers 🔊
+
+A Home Assistant integration for KEF speakers
 
 KEF Connector is compatible with W2 Platform speakers:
-- LSX II  
-- LSX II LT  
-- LS50 Wireless II  
-- LS60 Wireless  
+- LSX II
+- LSX II LT
+- LS50 Wireless II
+- LS60 Wireless
 - XIO Soundbar  
 
 ---
@@ -22,17 +23,17 @@ Copy the [`kef_connector`](custom_components/kef_connector) folder into your Hom
 
 ## ⚙️ Configuration
 
-KEF Connector uses **Config Flow** and is configured entirely through the **Home Assistant UI**.  
+KEF Connector uses **Config Flow** and is configured entirely through the **Home Assistant UI**.
 **YAML configuration is no longer supported.**
 
 You can add the integration manually or wait for it to be discovered.
 
-### 🔍 Auto Discovery
+### Auto Discovery
 When your KEF speaker is discovered via Google Cast or AirPlay:
 - **Name**, **IP Address** and **Speaker Model** are automatically filled in.
 - You can review and adjust parameters before completing setup.
 
-### 🛠 Manual Setup
+### Manual Setup
 If your speaker isn’t discovered automatically, you can add it manually via the Integrations page.  
 You’ll be prompted to enter:
 
@@ -62,6 +63,7 @@ If you previously configured KEF Connector via `configuration.yaml`:
 
 ## 📚 Documentation & Support
 
-- [KEF Connector GitHub](https://github.com/N0ciple/hass-kef-connector)  
-- [Issue Tracker](https://github.com/N0ciple/hass-kef-connector/issues)  
+- [KEF Connector GitHub](https://github.com/N0ciple/hass-kef-connector)
+- [Issue Tracker](https://github.com/N0ciple/hass-kef-connector/issues)
 - [Library used: pykefcontrol](https://github.com/N0ciple/pykefcontrol)
+- [CLAUDE.md](CLAUDE.md) - Detailed technical documentation for developers and AI assistants
