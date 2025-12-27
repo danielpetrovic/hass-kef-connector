@@ -14,11 +14,12 @@ KEF Connector provides **comprehensive local control** for all KEF W2 Platform s
 ### 🎯 Full API Coverage
 
 Built on [pykefcontrol](https://github.com/N0ciple/pykefcontrol) with **100% API discovery** (209 endpoints):
-- ✅ **163 implemented methods** - Complete control of all speaker features
+- ✅ **188 implemented methods** - Complete control of all speaker features
 - ✅ **Full DSP/EQ control** - 36 methods for audio customization
-- ✅ **Advanced features** - Calibration, firmware updates, network diagnostics
+- ✅ **Advanced features** - Calibration, firmware updates, network diagnostics, alarms/timers
 - ✅ **XIO-specific** - Sound profiles, room calibration, BLE firmware
 - ✅ **Profile management** - Save, load, and share custom EQ presets
+- ✅ **Bluetooth & Multiroom** - Device management, speaker grouping
 - ✅ **No cloud dependency** - 100% local control via HTTP API  
 
 ---
