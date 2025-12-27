@@ -107,6 +107,106 @@ For a complete feature list, see [pykefcontrol documentation](https://github.com
 
 ---
 
+## 🎚️ EQ Profile Management
+
+KEF Connector provides comprehensive EQ profile management, allowing you to save, load, and switch between custom equalizer settings.
+
+### How Profile Syncing Works
+
+**Important:** EQ profiles are stored **locally** in each system:
+- **KEF Connect app** stores profiles on your phone (not synced to cloud or speaker)
+- **Home Assistant** stores profiles in local storage
+- The **speaker** only stores the **active** profile, not a library
+
+However, both systems can recognize the same profiles because they read the active profile name and settings from the speaker:
+
+```
+┌──────────────┐         ┌──────────┐         ┌──────────────┐
+│  KEF Connect │◄───────►│  Speaker │◄───────►│ Home Assistant│
+│   (Phone)    │         │ (Active) │         │     (HA)      │
+│              │         │ Profile  │         │               │
+│ Profiles:    │         │          │         │ Profiles:     │
+│  - Movie     │         │ Current: │         │  - Movie      │
+│  - Music     │         │ "Movie"  │         │  - Music      │
+│  - Night     │         │          │         │  - Night      │
+└──────────────┘         └──────────┘         └──────────────┘
+```
+
+### Initial Setup (One-Time Per Speaker)
+
+To enable seamless profile switching between KEF Connect and Home Assistant:
+
+1. **Create profiles in KEF Connect app:**
+   - Adjust your EQ settings
+   - Save as a named profile (e.g., "Movie", "Music", "Night")
+   - Repeat for each profile you want
+
+2. **Recreate the same profiles in Home Assistant:**
+   - Switch to the profile in KEF Connect app
+   - In HA: Go to **Settings → Devices → KEF Speaker → Configure → EQ Profiles → Save Current EQ as Profile**
+   - Use the **exact same name** (e.g., "Movie")
+   - Repeat for each profile
+
+3. **Enjoy automatic syncing:**
+   - Switch profiles in either KEF Connect or HA
+   - Both systems will recognize and display the active profile
+   - The select entity shows which profile is currently active
+
+### Using EQ Profiles
+
+**Quick switching (most common):**
+- Use the `select.kef_[speaker]_eq_profile` entity in your dashboard
+- Single click to switch between saved profiles
+- Changes are immediately applied to the speaker
+
+**Profile management:**
+- **Save:** Settings → Devices → KEF Speaker → Configure → EQ Profiles → Save
+- **Load:** Use the select entity (faster) or Settings → Configure → EQ Profiles → Load
+- **Delete:** Settings → Devices → KEF Speaker → Configure → EQ Profiles → Delete
+
+**Services for automation:**
+```yaml
+# Save current EQ settings as a profile
+service: kef_connector.save_eq_profile
+data:
+  device_id: [device_id]
+  name: "Movie Mode"
+  description: "Enhanced bass for movies"
+
+# Load a saved profile
+service: kef_connector.load_eq_profile
+data:
+  device_id: [device_id]
+  name: "Movie Mode"
+
+# Delete a profile
+service: kef_connector.delete_eq_profile
+data:
+  device_id: [device_id]
+  name: "Movie Mode"
+
+# List all saved profiles
+service: kef_connector.list_eq_profiles
+data:
+  device_id: [device_id]
+```
+
+**Automation example:**
+```yaml
+automation:
+  - alias: "Movie Mode EQ at Night"
+    trigger:
+      - platform: time
+        at: "19:00:00"
+    action:
+      - service: kef_connector.load_eq_profile
+        data:
+          device_id: !input kef_device
+          name: "Movie Mode"
+```
+
+---
+
 ## 📚 Documentation & Support
 
 - [KEF Connector GitHub](https://github.com/N0ciple/hass-kef-connector)

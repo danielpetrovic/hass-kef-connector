@@ -373,7 +373,7 @@
       },
       "eq_profiles": {
         "title": "EQ Profiles",
-        "description": "Manage saved EQ profiles. Saved profiles: {profile_count} ({profile_names})\n\nNote: EQ profiles in the KEF Connect app are stored on your phone, not the speaker. Only the active profile is stored on the speaker. This integration saves profiles locally in Home Assistant.",
+        "description": "Manage saved EQ profiles. Saved profiles: {profile_count} ({profile_names})\n\nℹ️ How Profile Syncing Works:\n• KEF Connect app stores profiles locally on your phone\n• Home Assistant stores profiles locally in HA storage\n• The speaker only stores the ACTIVE profile (not a library)\n• Both systems recognize profiles by reading the active profile name from the speaker\n\nℹ️ Initial Setup (One-Time):\n1. Create profiles in KEF Connect app with your preferred EQ settings\n2. Switch to each profile in KEF app, then save it here with the SAME name\n3. After setup, switching profiles in either app will sync automatically\n\nℹ️ Daily Use:\nUse the 'EQ Profile' select entity in your dashboard for quick switching (much faster than using this menu).",
         "menu_options": {
           "save_profile": "Save Current EQ as Profile",
           "load_profile": "Load Saved Profile",
