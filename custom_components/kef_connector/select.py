@@ -1,6 +1,7 @@
 """Select platform for KEF Connector integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 
@@ -183,10 +184,19 @@ class KefSelectEntity(KefBaseEntity, SelectEntity):
         method = getattr(speaker, self.entity_description.set_method)
         await method(option)
 
-        # Optimistically update the UI immediately
-        self.coordinator.async_set_updated_data_optimistic(
-            self.entity_description.data_key, option
-        )
+        # Special handling for subwoofer preset: KEF speaker changes multiple settings
+        # (gain, crossover, polarity, etc.) when preset changes, so we need to refresh
+        if self.entity_description.key == "subwoofer_preset":
+            # Give the speaker time to apply preset changes before refreshing
+            # KEF speakers need ~1 second to commit all preset adjustments
+            await asyncio.sleep(1.0)
+            # Force full refresh to get all updated subwoofer settings
+            await self.coordinator.async_request_refresh()
+        else:
+            # Optimistically update the UI immediately for other selects
+            self.coordinator.async_set_updated_data_optimistic(
+                self.entity_description.data_key, option
+            )
 
 
 class KefEqProfileSelectEntity(KefBaseEntity, SelectEntity):

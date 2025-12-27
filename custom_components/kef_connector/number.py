@@ -39,7 +39,7 @@ NUMBER_DESCRIPTIONS: tuple[KefNumberEntityDescription, ...] = (
         set_method="set_treble_amount",
         native_min_value=-3.0,
         native_max_value=3.0,
-        native_step=0.5,
+        native_step=0.25,
         native_unit_of_measurement="dB",
         icon="mdi:music-clef-treble",
         entity_category=EntityCategory.CONFIG,
@@ -100,7 +100,7 @@ NUMBER_DESCRIPTIONS: tuple[KefNumberEntityDescription, ...] = (
         set_method="set_subwoofer_gain",
         native_min_value=-10.0,
         native_max_value=10.0,
-        native_step=0.5,
+        native_step=1.0,
         native_unit_of_measurement="dB",
         icon="mdi:speaker",
         entity_category=EntityCategory.CONFIG,
@@ -190,7 +190,13 @@ class KefNumberEntity(KefBaseEntity, NumberEntity):
         else:
             await method(value)
 
-        # Optimistically update the UI immediately
-        self.coordinator.async_set_updated_data_optimistic(
-            self.entity_description.data_key, value
-        )
+        # Subwoofer settings: When manually changing gain or crossover,
+        # KEF speaker changes preset to "custom", so we need to refresh
+        if self.entity_description.key in ("subwoofer_gain", "subwoofer_crossover"):
+            # Force full refresh to get updated preset and other related values
+            await self.coordinator.async_request_refresh()
+        else:
+            # Optimistically update the UI immediately for other numbers
+            self.coordinator.async_set_updated_data_optimistic(
+                self.entity_description.data_key, value
+            )

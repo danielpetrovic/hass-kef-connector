@@ -352,3 +352,51 @@ Example: `ab_cd_ef_12_34_56_sensor_volume`
 
 ### Device Identifiers
 Uses MAC address for consistent device identification across HA restarts.
+
+## Recent Bug Fixes (2025-12-25)
+
+### 1. Number Entity Step Sizes
+**Files:** `number.py`
+
+**Treble Step Size** (Line 42)
+- **Old:** `native_step=0.5` (allowed 0.5 dB increments)
+- **New:** `native_step=0.25` (matches KEF Connect app)
+- **Effect:** Treble slider now moves in 0.25 dB steps (-3.0, -2.75, -2.5, ..., +3.0)
+
+**Subwoofer Gain Step Size** (Line 103)
+- **Old:** `native_step=0.5` (allowed decimal values like 5.5 dB)
+- **New:** `native_step=1.0` (integer steps only)
+- **Effect:** Subwoofer gain slider now moves in 1 dB steps (-10, -9, ..., +10)
+
+**Status:** ✅ Fixed - UI now prevents invalid values at the slider level
+
+### 2. Subwoofer Preset Refresh
+**Files:** `select.py` (Lines 186-195)
+
+**Issue:** When changing subwoofer preset (e.g., kube12b → kc62), only the preset name would update. The KEF speaker also changes gain, low-pass, and high-pass values to match the preset, but these didn't refresh in HA.
+
+**Fix:** Added special handling for `subwoofer_preset` selector:
+```python
+if self.entity_description.key == "subwoofer_preset":
+    # Force full refresh to get all updated subwoofer settings
+    await self.coordinator.async_request_refresh()
+```
+
+**Effect:** Now when you change preset, all related settings (gain, crossover frequencies) update immediately.
+
+**Status:** ⏳ Pending testing
+
+### 3. XIO Calibration Display
+**Files:** Inherited from pykefcontrol library update
+
+**Issue:** Calibration sensor showed "Not calibrated" when calibrated, adjustment showed 0 dB instead of -5 dB.
+
+**Fix:** Updated `pykefcontrol/kef_connector.py` to correctly parse API responses:
+- Calibration status: Parse nested `kefDspCalibrationStatus` object
+- Calibration result: Read `double_` type instead of `i32_`
+
+**Effect:** Room Calibration sensor now shows:
+- State: "Calibrated" (was "Not calibrated")
+- Attribute `adjustment_db`: -5 (was 0)
+
+**Status:** ✅ Verified working on XIO soundbar

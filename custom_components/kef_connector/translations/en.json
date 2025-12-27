@@ -40,7 +40,7 @@
         }
       },
       "subwoofer_preset": {
-        "name": "SW: Preset",
+        "name": "SW: Model",
         "state": {
           "custom": "Custom",
           "kc62": "KC62",
