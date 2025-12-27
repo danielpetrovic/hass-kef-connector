@@ -149,6 +149,14 @@ SWITCH_DESCRIPTIONS: tuple[KefSwitchEntityDescription, ...] = (
     ),
     # System switches
     KefSwitchEntityDescription(
+        key="hdmi_auto_switch",
+        translation_key="hdmi_auto_switch",
+        data_key="auto_switch_hdmi",
+        set_on_method="set_auto_switch_hdmi",
+        icon="mdi:hdmi-port",
+        entity_category=EntityCategory.CONFIG,
+    ),
+    KefSwitchEntityDescription(
         key="startup_tone",
         translation_key="startup_tone",
         data_key="startup_tone",

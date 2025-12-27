@@ -61,6 +61,12 @@ SERVICE_LIST_PROFILES_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_CHECK_KW2_UPDATE_SCHEMA = vol.Schema(
+    {
+        vol.Required("device_id"): str,
+    }
+)
+
 PLATFORMS = [
     Platform.MEDIA_PLAYER,
     Platform.SENSOR,
@@ -334,4 +340,71 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         async_list_eq_profiles,
         schema=SERVICE_LIST_PROFILES_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+
+    async def async_check_kw2_update(call: ServiceCall) -> None:
+        """Manually trigger XIO Transmitter firmware update check."""
+        from homeassistant.helpers import entity_registry as er
+
+        device_id = call.data["device_id"]
+
+        coordinator = _get_coordinator_from_device_id(hass, device_id)
+        if not coordinator:
+            _LOGGER.error("Device not found: %s", device_id)
+            return
+
+        # Check if this is an XIO speaker
+        if coordinator.speaker_model != "XIO":
+            _LOGGER.error("Transmitter firmware update is only available for XIO soundbar")
+            return
+
+        # Find the transmitter update entity (check both old and new unique_id patterns)
+        ent_reg = er.async_get(hass)
+        transmitter_entity_id = None
+
+        for entity_id, entity_entry in ent_reg.entities.items():
+            # Find entity by unique_id pattern (support both old kw2 and new xio_transmitter)
+            if entity_entry.domain == "update" and ("_kw2_firmware_update" in entity_entry.unique_id or "_xio_transmitter_firmware_update" in entity_entry.unique_id):
+                # Verify it belongs to the right config entry
+                for entry_id in coordinator.hass.data[DOMAIN]:
+                    if coordinator == coordinator.hass.data[DOMAIN][entry_id]:
+                        if entity_entry.config_entry_id == entry_id:
+                            transmitter_entity_id = entity_id
+                            break
+                break
+
+        if not transmitter_entity_id:
+            _LOGGER.error("Transmitter firmware update entity not found")
+            return
+
+        # Get the actual entity instance from the platform
+        # We need to access the update platform's entities
+        update_platform = hass.data.get("entity_platform", {}).get(f"{DOMAIN}.update")
+        if not update_platform:
+            _LOGGER.error("Update platform not found")
+            return
+
+        # Find the entity in the platform's entities
+        transmitter_entity = None
+        for entity in update_platform.entities.values():
+            if entity.entity_id == transmitter_entity_id:
+                transmitter_entity = entity
+                break
+
+        if not transmitter_entity:
+            _LOGGER.error("Could not access Transmitter update entity")
+            return
+
+        # Reset the update available flag to allow re-checking
+        transmitter_entity._update_available = False
+
+        # Trigger the check
+        _LOGGER.info("Manually triggering XIO Transmitter firmware update check")
+        await transmitter_entity._async_check_for_updates()
+
+    hass.services.async_register(
+        DOMAIN,
+        "check_kw2_update",
+        async_check_kw2_update,
+        schema=SERVICE_CHECK_KW2_UPDATE_SCHEMA,
     )

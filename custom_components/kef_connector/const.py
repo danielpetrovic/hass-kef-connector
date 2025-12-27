@@ -127,6 +127,16 @@ CABLE_MODES: Final = ["wired", "wireless"]
 # Master channel options
 MASTER_CHANNELS: Final = ["left", "right"]
 
+# Wake source options (which input can wake speaker from standby)
+# Only physical inputs with signal detection - WiFi cannot wake speaker
+WAKE_SOURCE_OPTIONS: Final = {
+    "LSX2": ["wakeup_default", "bluetooth", "tv", "optical", "analog", "usb"],
+    "LSX2LT": ["wakeup_default", "bluetooth", "tv", "optical", "usb"],
+    "LS50W2": ["wakeup_default", "bluetooth", "tv", "optical", "coaxial", "analog"],
+    "LS60": ["wakeup_default", "bluetooth", "tv", "optical", "coaxial", "analog"],
+    "XIO": ["wakeup_default", "bluetooth", "tv", "optical"],
+}
+
 # KEF speaker model prefixes for zeroconf filtering
 # Order matters: check more specific patterns first (LSX-II-LT- before LSX-II-)
 KEF_ZEROCONF_PREFIXES: Final = [

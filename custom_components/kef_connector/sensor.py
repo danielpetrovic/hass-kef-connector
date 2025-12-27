@@ -433,7 +433,7 @@ class KefCalibrationSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        """Return the calibration status."""
+        """Return the calibration date or status."""
         if not self.coordinator.last_update_success:
             return None
 
@@ -442,7 +442,18 @@ class KefCalibrationSensor(CoordinatorEntity, SensorEntity):
             return None
 
         is_calibrated = status.get("isCalibrated", False)
-        return "Calibrated" if is_calibrated else "Not calibrated"
+        if not is_calibrated:
+            return "Not calibrated"
+
+        # Show calibration date if calibrated
+        year = status.get("year", 0)
+        month = status.get("month", 0)
+        day = status.get("day", 0)
+
+        if year and month and day:
+            return f"{year}-{month:02d}-{day:02d}"
+
+        return "Calibrated"
 
     @property
     def extra_state_attributes(self) -> dict[str, any] | None:
@@ -458,7 +469,6 @@ class KefCalibrationSensor(CoordinatorEntity, SensorEntity):
 
         attrs = {
             "is_calibrated": status.get("isCalibrated", False),
-            "stability": status.get("stability"),
         }
 
         if result is not None:

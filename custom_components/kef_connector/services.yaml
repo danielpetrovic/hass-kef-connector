@@ -73,3 +73,15 @@ list_eq_profiles:
       selector:
         device:
           integration: kef_connector
+
+check_kw2_update:
+  name: Check Transmitter Firmware Update
+  description: Manually check for XIO Transmitter firmware updates (wireless subwoofer transmitter)
+  fields:
+    device_id:
+      name: Device
+      description: The KEF XIO soundbar device
+      required: true
+      selector:
+        device:
+          integration: kef_connector

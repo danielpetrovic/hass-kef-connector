@@ -59,8 +59,15 @@ async def async_setup_entry(
 ) -> None:
     """Set up KEF Connector update entity from config entry."""
     coordinator: KefCoordinator = hass.data[DOMAIN][entry.entry_id]
+    speaker_model = entry.data.get("speaker_model", "LSX2").upper()
 
-    async_add_entities([KefFirmwareUpdate(coordinator, entry)])
+    entities = [KefFirmwareUpdate(coordinator, entry)]
+
+    # Add XIO Transmitter firmware update (XIO only)
+    if speaker_model == "XIO":
+        entities.append(KefKW2FirmwareUpdate(coordinator, entry))
+
+    async_add_entities(entities)
 
 
 class KefFirmwareUpdate(KefBaseEntity, UpdateEntity):
@@ -301,3 +308,234 @@ class KefFirmwareUpdate(KefBaseEntity, UpdateEntity):
 
         except Exception as err:
             _LOGGER.debug("Could not fetch KEF firmware releases: %s", err)
+
+
+class KefKW2FirmwareUpdate(KefBaseEntity, UpdateEntity):
+    """Representation of KEF XIO Transmitter firmware update.
+
+    The XIO soundbar has an internal wireless transmitter that communicates
+    with KEF wireless subwoofers (KW2, KC62, KF92). This entity manages
+    firmware updates for that transmitter module.
+    """
+
+    _attr_device_class = UpdateDeviceClass.FIRMWARE
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_translation_key = "xio_transmitter_firmware"
+
+    def __init__(
+        self,
+        coordinator: KefCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the XIO Transmitter firmware update entity."""
+        super().__init__(coordinator, entry, "xio_transmitter_firmware_update")
+        self._attr_name = "Transmitter Firmware"
+        self._update_in_progress: bool | int = False
+        self._update_available: bool = False
+
+    @property
+    def installed_version(self) -> str | None:
+        """Return the installed XIO Transmitter firmware version.
+
+        Note: KEF API does not expose the actual installed version.
+        We return a placeholder to allow Home Assistant to show update state.
+        """
+        # Return placeholder version so HA can determine state
+        return "Unknown"
+
+    @property
+    def latest_version(self) -> str | None:
+        """Return the latest available XIO Transmitter firmware version.
+
+        KEF doesn't publish transmitter firmware releases externally.
+        We detect updates by checking the speaker's internal update check.
+        """
+        if self._update_available:
+            # Return different version to trigger update available state
+            return "Update Available"
+        # Return same as installed to show up-to-date
+        return "Unknown"
+
+    async def async_install(
+        self, version: str | None, backup: bool, **kwargs
+    ) -> None:
+        """Install the XIO Transmitter firmware update.
+
+        The transmitter firmware update flow is:
+        1. Speaker checks for transmitter updates automatically
+        2. kef:ble/updateNow triggers immediate installation
+        3. Monitor kef:ble/updateStatus for progress
+
+        The update takes several minutes and the status will cycle through:
+        - startUp -> downloading -> installing -> complete (or back to idle)
+        """
+        import asyncio
+
+        _LOGGER.info("Starting XIO Transmitter firmware update")
+        self._update_in_progress = True
+        self.async_write_ha_state()
+
+        speaker = self.coordinator.speaker
+
+        try:
+            # Log BLE UI info to see if it contains version data
+            try:
+                ui_info = await speaker.get_ble_ui_info()
+                _LOGGER.debug("Transmitter BLE UI info: %s", ui_info)
+            except Exception as e:
+                _LOGGER.debug("Could not get BLE UI info: %s", e)
+
+            # Trigger immediate installation
+            _LOGGER.info("Starting Transmitter firmware installation")
+            result = await speaker.install_ble_firmware_now()
+            _LOGGER.debug("Transmitter install trigger result: %s", result)
+
+            # Give the speaker a moment to start
+            await asyncio.sleep(2)
+
+            # Monitor update progress
+            max_wait_seconds = 600  # 10 minutes max
+            poll_interval = 5  # Poll more frequently during installation
+            waited = 2
+            last_status = None
+            status_unchanged_count = 0
+
+            while waited < max_wait_seconds:
+                await asyncio.sleep(poll_interval)
+                waited += poll_interval
+
+                try:
+                    status = await speaker.get_ble_firmware_status()
+
+                    # Track if status is stuck
+                    if status == last_status:
+                        status_unchanged_count += 1
+                    else:
+                        status_unchanged_count = 0
+                        last_status = status
+
+                    _LOGGER.debug("Transmitter update status: %s (waited %ds)", status, waited)
+
+                    if status == "complete":
+                        _LOGGER.info("Transmitter firmware update completed successfully")
+                        self._update_in_progress = False
+                        self._update_available = False
+                        break
+                    elif status == "idle":
+                        # Status went back to idle - installation likely completed
+                        _LOGGER.info("Transmitter firmware update completed")
+                        await self.coordinator.async_request_refresh()
+                        self._update_in_progress = False
+                        self._update_available = False
+                        break
+                    elif status == "updateAvailable":
+                        # Installation hasn't started yet
+                        # The speaker may require manual confirmation via KEF app or physical button
+                        _LOGGER.debug("Transmitter showing updateAvailable - waiting for installation to start (status unchanged: %d times)", status_unchanged_count)
+
+                        if status_unchanged_count > 12:  # 12 * 5 seconds = 1 minute
+                            _LOGGER.warning("Transmitter installation hasn't started after 1 minute - may require manual confirmation on speaker")
+                            _LOGGER.info("Check the KEF XIO soundbar display or KEF Connect app - you may need to confirm the update manually")
+                            self._update_in_progress = False
+                            break
+                    elif status in ("downloading", "installing", "updateInProgress"):
+                        # Still in progress
+                        _LOGGER.debug("Transmitter update in progress: %s", status)
+                        self._update_in_progress = True
+                        self.async_write_ha_state()
+
+                        # If stuck in same status for too long (>2 minutes), assume complete
+                        if status_unchanged_count > 24:  # 24 * 5 seconds = 2 minutes
+                            _LOGGER.warning("Transmitter status stuck at '%s' for 2+ minutes, assuming completion", status)
+                            break
+                    elif status == "startUp":
+                        # Just started or waiting
+                        _LOGGER.debug("Transmitter update starting up...")
+                    else:
+                        # Unexpected status
+                        _LOGGER.warning("Unexpected Transmitter status during install: %s", status)
+
+                except Exception as e:
+                    _LOGGER.debug("Error checking Transmitter update status: %s", e)
+
+            if waited >= max_wait_seconds:
+                _LOGGER.warning("Transmitter firmware update timed out after %d seconds", max_wait_seconds)
+
+            self._update_in_progress = False
+            self.async_write_ha_state()
+
+            # Refresh coordinator to get new firmware version
+            await self.coordinator.async_request_refresh()
+
+        except Exception as e:
+            _LOGGER.error("Failed to install Transmitter firmware update: %s", e)
+            self._update_in_progress = False
+            self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        # Check for updates in the background (don't block entity setup)
+        self.hass.async_create_task(self._async_check_for_updates())
+
+    async def _async_check_for_updates(self) -> None:
+        """Trigger Transmitter firmware update check on KEF servers.
+
+        Note: Once an update is detected, _update_available stays True until
+        installation completes. We don't set it back to False based on status
+        checks because the BLE firmware status can transition back to idle
+        after initially showing updateAvailable.
+        """
+        import asyncio
+
+        # Don't re-check if we already know an update is available
+        if self._update_available:
+            _LOGGER.debug("Transmitter update already detected, skipping check")
+            return
+
+        try:
+            speaker = self.coordinator.speaker
+
+            # Trigger the update check (activates KEF server check)
+            _LOGGER.debug("Triggering Transmitter firmware update check")
+            result = await speaker.check_ble_firmware_update()
+            _LOGGER.debug("Transmitter check trigger result: %s", result)
+
+            # Give the speaker a moment to start the check
+            await asyncio.sleep(2)
+
+            # Poll for the check to complete (typically takes 2-5 seconds)
+            max_wait = 30  # Maximum 30 seconds
+            poll_interval = 2
+            waited = 2  # Already waited 2 seconds above
+
+            while waited < max_wait:
+                await asyncio.sleep(poll_interval)
+                waited += poll_interval
+
+                status = await speaker.get_ble_firmware_status()
+                _LOGGER.debug("Transmitter firmware status after %ds: %s", waited, status)
+
+                if status == "updateAvailable":
+                    _LOGGER.info("Transmitter firmware update available")
+                    self._update_available = True
+                    self.async_write_ha_state()
+                    return
+                elif status == "idle":
+                    # Check complete, no update available
+                    # Only log, don't set flag to False in case we missed the updateAvailable state
+                    _LOGGER.debug("No Transmitter firmware update available (status: idle)")
+                    return
+                elif status == "checkingForUpdates":
+                    # Still checking - continue polling
+                    _LOGGER.debug("Transmitter still checking for updates...")
+                else:
+                    # Unexpected status
+                    _LOGGER.debug("Unexpected Transmitter status: %s", status)
+
+            # Timeout - log as debug, not warning, since this happens on every startup
+            _LOGGER.debug("Transmitter firmware check timed out after %ds - speaker may not support automatic checks", max_wait)
+
+        except Exception as err:
+            _LOGGER.debug("Could not check for Transmitter firmware updates: %s", err)

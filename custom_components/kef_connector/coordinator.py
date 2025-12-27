@@ -92,6 +92,8 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             startup_tone = await self.speaker.get_startup_tone()
             cable_mode = await self.speaker.get_cable_mode()
             master_channel = await self.speaker.get_master_channel()
+            auto_switch_hdmi = await self.speaker.get_auto_switch_hdmi()
+            wake_source = await self.speaker.get_wake_source()
 
             # Get subwoofer wake on startup settings
             subwoofer_wake_on_startup = await self.speaker.get_subwoofer_wake_on_startup()
@@ -109,10 +111,19 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Get calibration status (XIO only)
             calibration_status = None
             calibration_result = None
+            ble_firmware_version = None
+            ble_firmware_status = None
             if self.speaker_model == "XIO":
                 try:
                     calibration_status = await self.speaker.get_calibration_status()
                     calibration_result = await self.speaker.get_calibration_result()
+                except Exception:
+                    pass
+                try:
+                    # Note: ble_firmware_version returns the server version, not the installed version
+                    # The KEF API doesn't expose the actual installed version on the KW2 module
+                    # We only fetch status for update detection
+                    ble_firmware_status = await self.speaker.get_ble_firmware_status()
                 except Exception:
                     pass
 
@@ -198,6 +209,8 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "startup_tone": startup_tone,
                 "cable_mode": cable_mode,
                 "master_channel": master_channel,
+                "auto_switch_hdmi": auto_switch_hdmi,
+                "wake_source": wake_source,
                 # Subwoofer wake on startup settings
                 "subwoofer_wake_on_startup": subwoofer_wake_on_startup,
                 "kw1_wake_on_startup": kw1_wake_on_startup,
@@ -210,6 +223,9 @@ class KefCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Calibration data (XIO only)
                 "calibration_status": calibration_status,
                 "calibration_result": calibration_result,
+                # BLE firmware data (XIO KW2 module only)
+                "ble_firmware_version": ble_firmware_version,
+                "ble_firmware_status": ble_firmware_status,
             }
             self._last_successful_data = data
             return data

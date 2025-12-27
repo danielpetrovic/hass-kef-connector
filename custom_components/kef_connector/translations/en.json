@@ -68,6 +68,18 @@
           "standby_none": "Never"
         }
       },
+      "wake_source": {
+        "name": "HW: Wake Source",
+        "state": {
+          "wakeup_default": "None",
+          "bluetooth": "Bluetooth",
+          "tv": "TV (HDMI)",
+          "optical": "Optical",
+          "coaxial": "Coaxial",
+          "analog": "Analog",
+          "usb": "USB"
+        }
+      },
       "cable_mode": {
         "name": "HW: Interspeaker Link",
         "state": {
@@ -123,7 +135,7 @@
         "name": "SW: KW1 Wake on Startup"
       },
       "wall_mounted": {
-        "name": "HW: Wall Mounted"
+        "name": "DSP: Wall Mounted"
       },
       "front_led": {
         "name": "Front LED"
@@ -137,6 +149,9 @@
       "control_panel_led": {
         "name": "DND: Control Panel LED"
       },
+      "hdmi_auto_switch": {
+        "name": "HW: Auto-Switch to TV"
+      },
       "startup_tone": {
         "name": "DND: Startup Tone"
       }
@@ -144,6 +159,9 @@
     "button": {
       "check_firmware_update": {
         "name": "Check Firmware Update"
+      },
+      "start_calibration": {
+        "name": "Start Room Calibration"
       }
     },
     "sensor": {
@@ -153,6 +171,14 @@
           "calibrated": "Calibrated",
           "not_calibrated": "Not calibrated"
         }
+      }
+    },
+    "update": {
+      "kw2_firmware": {
+        "name": "KW2 Firmware"
+      },
+      "xio_transmitter_firmware": {
+        "name": "Transmitter Firmware"
       }
     }
   },
@@ -210,6 +236,16 @@
         "device_id": {
           "name": "Device",
           "description": "The KEF speaker device"
+        }
+      }
+    },
+    "check_kw2_update": {
+      "name": "Check KW2 Firmware Update",
+      "description": "Manually check for KW2 BLE module firmware updates (XIO soundbar only)",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The KEF XIO soundbar device"
         }
       }
     }

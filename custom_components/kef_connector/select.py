@@ -23,6 +23,7 @@ from .const import (
     SOUND_PROFILES,
     STANDBY_MODES,
     SUBWOOFER_PRESETS,
+    WAKE_SOURCE_OPTIONS,
 )
 from .coordinator import KefCoordinator
 from .entity import KefBaseEntity
@@ -145,6 +146,19 @@ async def async_setup_entry(
 
     # Add EQ Profile select entity (available for all speakers)
     entities.append(KefEqProfileSelectEntity(hass, coordinator, entry))
+
+    # Add Wake Source select entity with model-specific options
+    wake_source_options = WAKE_SOURCE_OPTIONS.get(speaker_model, WAKE_SOURCE_OPTIONS["LSX2"])
+    wake_source_desc = KefSelectEntityDescription(
+        key="wake_source",
+        translation_key="wake_source",
+        data_key="wake_source",
+        set_method="set_wake_source",
+        options_list=wake_source_options,
+        icon="mdi:power",
+        entity_category=EntityCategory.CONFIG,
+    )
+    entities.append(KefSelectEntity(coordinator, entry, wake_source_desc))
 
     async_add_entities(entities)
 
