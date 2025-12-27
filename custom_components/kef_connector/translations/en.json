@@ -43,13 +43,13 @@
         "name": "SW: Model",
         "state": {
           "custom": "Custom",
-          "kc62": "KC62",
-          "kf92": "KF92",
-          "kube8b": "KUBE 8b",
-          "kube10b": "KUBE 10b",
-          "kube12b": "KUBE 12b",
-          "kube15": "KUBE 15",
-          "t2": "T2"
+          "kc62": "KEF KC62",
+          "kf92": "KEF KF92 / KC92",
+          "kube8b": "KEF KUBE 8B / 8 MIE",
+          "kube10b": "KEF KUBE 10B / 10 MIE",
+          "kube12b": "KEF KUBE 12B / 12 MIE",
+          "kube15mie": "KEF KUBE 15 MIE",
+          "t2": "KEF T2 Subwoofer"
         }
       },
       "subwoofer_polarity": {

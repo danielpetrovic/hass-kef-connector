@@ -106,7 +106,7 @@ SUBWOOFER_PRESETS: Final = [
     "kube8b",
     "kube10b",
     "kube12b",
-    "kube15",
+    "kube15mie",
     "t2",
 ]
 
