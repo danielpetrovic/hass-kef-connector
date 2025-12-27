@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Symlinked pykefcontrol
+custom_components/kef_connector/pykefcontrol
