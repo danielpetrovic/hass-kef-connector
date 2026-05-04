@@ -400,6 +400,7 @@ class KefSpeaker(CoordinatorEntity, MediaPlayerEntity):
     @delay_update(5)
     async def async_turn_on(self):
         """Turn the media player on."""
+        await self.coordinator.speaker.power_on()
         await self.coordinator.speaker.set_source(self._previous_source)
 
     @delay_update(5)
